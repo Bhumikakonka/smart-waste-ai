@@ -1,0 +1,9 @@
+venv/
+dataset/
+runs/
+__pycache__/
+*.pt
+*.keras
+*.h5
+static/uploads/
+database.db

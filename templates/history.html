@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2 class="page-title">📜 Your Waste History</h2>
+
+<div class="history-grid">
+
+{% for r in records %}
+<div class="card history-card">
+
+    <img src="/static/uploads/{{r[0]}}" class="history-img">
+
+    <div class="history-info">
+        <h3>{{r[1]}}</h3>
+        <p><b>Date:</b> {{r[2]}}</p>
+    </div>
+
+</div>
+{% endfor %}
+
+</div>
+
+{% endblock %}

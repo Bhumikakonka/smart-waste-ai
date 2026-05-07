@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body class="auth-body">
+
+<div class="auth-wrapper">
+
+    <div class="auth-card">
+
+        <h2>🌱 WasteAI</h2>
+        <p class="subtitle">Login to your account</p>
+
+        <form method="POST">
+            <input type="email" name="email" placeholder="Email" required>
+            
+            <div class="password-box">
+                <input type="password" name="password" id="password" placeholder="Password" required>
+                <span onclick="togglePassword()">👁️</span>
+            </div>
+
+            <button type="submit">Login</button>
+        </form>
+
+        <p class="switch">
+            Don’t have an account?
+            <a href="/register">Register</a>
+        </p>
+
+    </div>
+
+</div>
+
+<script>
+function togglePassword() {
+    let pass = document.getElementById("password");
+    pass.type = pass.type === "password" ? "text" : "password";
+}
+</script>
+
+</body>
+</html>

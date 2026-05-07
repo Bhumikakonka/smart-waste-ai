@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container">
+
+    <h1>🤖 AI Waste Intelligence</h1>
+
+    <div class="grid">
+
+        <!-- IMAGE -->
+        <div class="card image-card">
+            <img src="/static/uploads/{{ image }}">
+        </div>
+
+        <!-- SUMMARY -->
+        <div class="card summary">
+
+            <h2>{{ category }}</h2>
+            <p>{{ confidence }} confidence</p>
+
+            <div class="badge eco">🌱 {{ eco_score }}%</div>
+
+            <div class="stats">
+                <p>💰 ₹ {{ scrap_value }}/kg</p>
+                <p>Total: ₹ {{ total_value }}</p>
+            </div>
+
+            <div class="decision">
+                <h3>{{ decision }}</h3>
+                <small>{{ reason }}</small>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- DETECTIONS -->
+    <h2 class="section-title">Detected Objects</h2>
+
+    {% if detections %}
+    <div class="cards">
+
+        {% for d in detections %}
+        <div class="card detect">
+
+            <h3>{{ d.label }}</h3>
+            <p>{{ d.confidence }}%</p>
+
+            <div class="bar">
+                <div style="width: {{ d.confidence }}%; min-width:5px;"></div>
+            </div>
+
+            <p>₹ {{ d.value }}</p>
+            <small>{{ d.decision }}</small>
+
+        </div>
+        {% endfor %}
+
+    </div>
+    {% else %}
+        <p class="empty">No objects detected</p>
+    {% endif %}
+
+    <!-- ACTIONS -->
+    <div class="actions">
+        <a href="/upload">Try Again</a>
+        
+    </div>
+
+</div>
+
+<style>
+
+body {
+    background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+    color:white;
+    font-family: sans-serif;
+}
+
+.container {
+    max-width: 1100px;
+    margin:auto;
+    padding: 40px 20px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+.card {
+    background: rgba(0,0,0,0.6);
+    padding:20px;
+    border-radius:15px;
+}
+
+.image-card img {
+    width:100%;
+    border-radius:10px;
+}
+
+.badge.eco {
+    background:#00ffcc;
+    color:black;
+    padding:5px 10px;
+    display:inline-block;
+    border-radius:5px;
+    margin:10px 0;
+}
+
+.bar {
+    height:6px;
+    background:#333;
+    margin:5px 0;
+}
+
+.bar div {
+    height:100%;
+    background:#00ffcc;
+}
+
+.cards {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.detect {
+    text-align:center;
+    width: 200px;
+}
+
+.actions {
+    margin-top:30px;
+    text-align:center;
+}
+
+.actions a {
+    margin:10px;
+    padding:10px 20px;
+    background:#00ffcc;
+    color:black;
+    border-radius:5px;
+    text-decoration:none;
+}
+
+.empty {
+    text-align:center;
+    color:gray;
+}
+
+</style>
+
+{% endblock %}

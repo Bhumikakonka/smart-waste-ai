@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1 class="title">🛒 Sell Scrap Hub</h1>
+
+<div class="layout">
+
+    <!-- LEFT: MAP -->
+    <div class="map-section">
+        <div id="map"></div>
+    </div>
+
+    <!-- RIGHT: BUYERS + SELL PANEL -->
+    <div class="side-panel">
+
+        <h2>Nearby Buyers</h2>
+        <div id="buyers-list">Loading buyers...</div>
+
+        <!-- ================= SELL PANEL ================= -->
+        <div class="sell-box">
+
+            <h2>🚀 Sell Scrap</h2>
+
+            <!-- selected buyer -->
+            <input type="hidden" id="buyer_id">
+
+            <label>Waste Type</label>
+            <select id="wasteType">
+                <option value="plastic">Plastic</option>
+                <option value="metal">Metal</option>
+                <option value="glass">Glass</option>
+                <option value="paper">Paper</option>
+                <option value="organic">Organic</option>
+            </select>
+
+            <label>Quantity (kg)</label>
+            <input type="number" id="quantity" placeholder="Enter kg">
+
+            <button onclick="sellNow()">🚀 SELL NOW</button>
+
+            <h3 id="result"></h3>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ================= SCRIPT ================= -->
+<script>
+
+let map;
+let userLat = 0;
+let userLon = 0;
+
+// init map
+window.onload = function () {
+
+    navigator.geolocation.getCurrentPosition(
+        pos => initMap(pos.coords.latitude, pos.coords.longitude),
+        () => initMap(19.0760, 72.8777)
+    );
+};
+
+// ================= MAP =================
+function initMap(lat, lon) {
+
+    userLat = lat;
+    userLon = lon;
+
+    map = L.map('map').setView([lat, lon], 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    L.marker([lat, lon])
+        .addTo(map)
+        .bindPopup("📍 You are here")
+        .openPopup();
+
+    loadBuyers();
+}
+
+// ================= LOAD BUYERS =================
+function loadBuyers() {
+
+    fetch('/nearest-buyers', {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            lat: userLat,
+            lon: userLon,
+            waste_type: ""
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        let buyers = data.buyers || [];
+        let html = "";
+
+        if (buyers.length === 0) {
+            document.getElementById("buyers-list").innerHTML = "No buyers found";
+            return;
+        }
+
+        buyers.forEach(b => {
+
+            // marker
+            L.marker([b.lat, b.lon])
+                .addTo(map)
+                .bindPopup(`
+                    <b>${b.name}</b><br>
+                    ₹${b.price}/kg<br>
+                    📏 ${b.distance} km
+                `);
+
+            html += `
+                <div class="buyer-card">
+                    <h3>${b.name}</h3>
+                    <p>💰 ₹${b.price}/kg</p>
+                    <p>📍 ${b.location}</p>
+                    <p>📏 ${b.distance} km</p>
+
+                    <button onclick="selectBuyer(${b.id}, ${b.price})">
+                        Select
+                    </button>
+                </div>
+            `;
+        });
+
+        document.getElementById("buyers-list").innerHTML = html;
+    });
+}
+
+// ================= SELECT BUYER =================
+function selectBuyer(id, price){
+
+    document.getElementById("buyer_id").value = id;
+
+    document.getElementById("result").innerText =
+        "Selected Buyer ✔ (Rate ₹" + price + "/kg)";
+}
+
+// ================= SELL NOW =================
+function sellNow(){
+
+    let buyer_id = document.getElementById("buyer_id").value;
+    let waste_type = document.getElementById("wasteType").value;
+    let quantity = document.getElementById("quantity").value;
+
+    if(!buyer_id){
+        alert("Please select a buyer");
+        return;
+    }
+
+    if(!quantity || quantity <= 0){
+        alert("Enter valid quantity");
+        return;
+    }
+
+    fetch('/sell-now', {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            buyer_id: buyer_id,
+            waste_type: waste_type,
+            quantity: quantity
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        if(data.success){
+            document.getElementById("result").innerText =
+                "✅ Sold Successfully! Total ₹" + data.total_price;
+        } else {
+            document.getElementById("result").innerText =
+                "❌ " + data.error;
+        }
+    })
+    .catch(err => {
+        console.log(err);
+        alert("Server error");
+    });
+}
+
+</script>
+
+<!-- ================= STYLE ================= -->
+<style>
+
+.title{
+    text-align:center;
+    margin:20px;
+}
+
+.layout{
+    display:flex;
+    height:85vh;
+}
+
+/* MAP */
+.map-section{
+    flex:2;
+}
+
+#map{
+    height:100%;
+}
+
+/* SIDE PANEL */
+.side-panel{
+    flex:1;
+    background:#111;
+    padding:15px;
+    overflow-y:auto;
+}
+
+/* BUYER CARD */
+.buyer-card{
+    background:#222;
+    padding:12px;
+    margin-bottom:10px;
+    border-radius:10px;
+    color:white;
+}
+
+button{
+    background:#00ffcc;
+    border:none;
+    padding:8px;
+    cursor:pointer;
+    margin-top:5px;
+}
+
+/* SELL BOX */
+.sell-box{
+    margin-top:20px;
+    background:#222;
+    padding:15px;
+    border-radius:10px;
+    color:white;
+}
+
+.sell-box input,
+.sell-box select{
+    width:100%;
+    padding:8px;
+    margin:5px 0;
+}
+
+#result{
+    margin-top:10px;
+    color:#00ffcc;
+}
+
+</style>
+
+{% endblock %}

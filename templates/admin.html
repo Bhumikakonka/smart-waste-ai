@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="admin-container">
+
+    <!-- HEADER -->
+    <div class="admin-header">
+        <h1>🤖 AI Waste Intelligence Dashboard</h1>
+        <p>Real-time analytics & smart insights</p>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-grid">
+
+        <div class="stat-card glass">
+            <h3>👤 Users</h3>
+            <p class="count">{{users}}</p>
+        </div>
+
+        <div class="stat-card glass">
+            <h3>🗑️ Waste</h3>
+            <p class="count">{{waste}}</p>
+        </div>
+
+        <div class="stat-card glass">
+            <h3>🔥 Top Category</h3>
+            <p class="count">{{top_category}}</p>
+        </div>
+
+    </div>
+
+    <!-- CHARTS -->
+    <div class="charts-grid">
+
+        <div class="glass chart-card">
+            <h3>📊 Category Distribution</h3>
+            <canvas id="pieChart"></canvas>
+        </div>
+
+        <div class="glass chart-card">
+            <h3>📈 Waste Trend</h3>
+            <canvas id="lineChart"></canvas>
+        </div>
+
+    </div>
+
+    <!-- TABLE -->
+    <div class="glass table-card">
+        <h3>📋 Recent Uploads</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Image</th>
+                    <th>Category</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+
+            <tbody>
+            {% for row in recent %}
+                <tr>
+                    <td>
+                        <img src="/static/uploads/{{row[0]}}" class="table-img">
+                    </td>
+
+                    <td>
+                        <span class="tag" onclick="filterCategory('{{row[1]}}')">
+                            {{row[1]}}
+                        </span>
+                    </td>
+
+                    <td>{{row[2]}}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- INSIGHTS -->
+    <div class="glass insights">
+        <h3>🧠 AI Insights</h3>
+
+        <p>🔥 Most detected: <b>{{top_category}}</b></p>
+        <p>📈 Trending: <b>{{trend_category}}</b></p>
+        <p>🌱 Improve recycling efforts</p>
+    </div>
+
+</div>
+
+<!-- CHART LIB -->
+<!-- CHART LIB -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+let pieChart, lineChart;
+
+// SAFE DATA
+const labels = JSON.parse('{{ labels | tojson | safe }}');
+const values = JSON.parse('{{ values | tojson | safe }}');
+const dates  = JSON.parse('{{ dates  | tojson | safe }}');
+const counts = JSON.parse('{{ counts | tojson | safe }}');
+
+
+
+function loadCharts(labels, values, dates, counts) {
+
+    if (pieChart) pieChart.destroy();
+    if (lineChart) lineChart.destroy();
+
+    // PIE
+    pieChart = new Chart(document.getElementById("pieChart"), {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: values,
+                backgroundColor: ['#00ffcc','#00ccff','#ffcc00','#ff4d4d','#8e44ad','#2ecc71']
+            }]
+        }
+    });
+
+    // LINE
+    lineChart = new Chart(document.getElementById("lineChart"), {
+    type: 'line',
+    data: {
+        labels: dates.length ? dates : ["No Data"],
+        datasets: [{
+            label: "Waste Entries",
+            data: counts.length ? counts : [0],
+            borderColor: "#00ffcc",
+            backgroundColor: "rgba(0,255,200,0.2)",
+            fill: true,
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                labels: { color: "white" }
+            }
+        },
+        scales: {
+            x: {
+                ticks: { color: "white" }
+            },
+            y: {
+                ticks: { color: "white" }
+            }
+        }
+    }
+});
+}
+
+// INITIAL LOAD
+loadCharts(labels, values, dates, counts);
+
+// LIVE UPDATE
+setInterval(() => {
+
+    fetch('/admin_data')
+    .then(res => res.json())
+    .then(data => {
+        document.querySelectorAll(".count")[0].innerText = data.users;
+        document.querySelectorAll(".count")[1].innerText = data.waste;
+        document.querySelectorAll(".count")[2].innerText = data.top_category;
+    });
+
+    fetch('/admin_chart_data')
+    .then(res => res.json())
+    .then(data => {
+        loadCharts(data.labels, data.values, data.dates, data.counts);
+    });
+
+}, 5000);
+
+// FILTER
+function filterCategory(cat) {
+    alert("Filtering: " + cat);
+}
+</script>
+
+{% endblock %}

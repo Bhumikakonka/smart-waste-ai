@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="camera-page">
+
+    <h2 class="cam-title">🎥 Live Waste Detection</h2>
+
+    <div class="cam-wrapper">
+
+        <!-- CAMERA -->
+        <div class="cam-box">
+            <video id="video" autoplay playsinline></video>
+            <canvas id="canvas"></canvas>
+        </div>
+
+        <!-- SIDE INFO -->
+        <div class="cam-info">
+
+            <div class="info-card">
+                <p>🧠 <b>Objects</b></p>
+                <span id="result">-</span>
+            </div>
+
+            <div class="info-card">
+                <p>💰 <b>Value</b></p>
+                <span>₹ <span id="value">0</span></span>
+            </div>
+
+            <div class="info-card">
+                <p>📊 <b>Confidence</b></p>
+                <span id="conf">0</span>%
+            </div>
+
+            <div class="info-card">
+                <p>⚡ <b>Suggestion</b></p>
+                <div id="decision">-</div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+// ✅ SET CANVAS SIZE AFTER VIDEO LOAD
+video.addEventListener("loadedmetadata", () => {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+});
+
+// 💰 VALUE LOGIC (Frontend)
+function getValue(label) {
+    label = label.toLowerCase();
+
+    if (label.includes("plastic")) return 10;
+    if (label.includes("metal")) return 25;
+    if (label.includes("paper")) return 5;
+    if (label.includes("glass")) return 8;
+    if (label.includes("organic")) return 0;
+
+    return 0;
+}
+
+// 🎥 START CAMERA
+navigator.mediaDevices.getUserMedia({ video: true })
+.then(stream => {
+    video.srcObject = stream;
+    video.play();
+    detectLoop();
+})
+.catch(err => {
+    alert("Camera not accessible!");
+    console.log(err);
+});
+
+// 🔁 DETECTION LOOP
+function detectLoop() {
+
+    setInterval(() => {
+
+        if (!video.videoWidth) return;
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        ctx.drawImage(video, 0, 0);
+
+        let image = canvas.toDataURL("image/jpeg");
+
+        fetch('/predict_camera', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ image: image })
+        })
+        .then(res => res.json())
+        .then(data => {
+
+            ctx.drawImage(video, 0, 0);
+
+            if (!data.detections || data.detections.length === 0) {
+                document.getElementById("result").innerText = "No object";
+                document.getElementById("decision").innerHTML = "-";
+                document.getElementById("value").innerText = 0;
+                document.getElementById("conf").innerText = 0;
+                return;
+            }
+
+            let labels = [];
+
+            data.detections.forEach(d => {
+
+                let [x1, y1, x2, y2] = d.box;
+
+                // 🟩 DRAW BOX
+                ctx.strokeStyle = "#00ffcc";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+
+                // 🏷 LABEL
+                ctx.fillStyle = "#00ffcc";
+                ctx.font = "14px Arial";
+                ctx.fillText(
+                    d.label + " " + d.confidence.toFixed(1) + "%",
+                    x1,
+                    y1 > 10 ? y1 - 5 : 10
+                );
+
+                labels.push(d.label);
+
+                // 💰 VALUE
+                let val = getValue(d.label);
+                document.getElementById("value").innerText = val;
+
+                // 📊 CONFIDENCE
+                document.getElementById("conf").innerText = d.confidence.toFixed(1);
+
+                // ⚡ FULL SUGGESTION (FIXED)
+                if (d.suggestion) {
+                    let suggestionHTML = `
+                        <div>♻️ ${d.suggestion.recycle}</div>
+                        <div>🔁 ${d.suggestion.reuse}</div>
+                        <div>🗑️ ${d.suggestion.disposal}</div>
+                        <div>💡 ${d.suggestion.tip}</div>
+                    `;
+                    document.getElementById("decision").innerHTML = suggestionHTML;
+                }
+
+            });
+
+            // 🧠 OBJECT LIST
+            document.getElementById("result").innerText = labels.join(", ");
+
+        })
+        .catch(err => {
+            console.log("Error:", err);
+        });
+
+    }, 1500); // 1 sec interval
+
+}
+</script>
+
+{% endblock %}

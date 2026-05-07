@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="futuristic-dashboard">
+
+    <!-- HEADER -->
+    <div class="dash-header">
+        <h1>🤖 Smart Waste AI</h1>
+        <p>Real-time intelligent waste monitoring system</p>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-grid">
+
+        <div class="stat-card neon">
+            <h3>Total Uploads</h3>
+            <p class="counter">{{total}}</p>
+        </div>
+
+        <div class="stat-card neon">
+            <h3>System Status</h3>
+            <p class="status">🟢 Active</p>
+        </div>
+
+        <div class="stat-card neon">
+            <h3>AI Accuracy</h3>
+            <p>92%</p>
+        </div>
+
+    </div>
+
+    <!-- ACTION PANEL -->
+    <div class="action-panel">
+
+        <a href="/upload" class="action-btn">📤 Upload</a>
+        <a href="/live" class="action-btn">🎥 Live AI</a>
+        <a href="/history" class="action-btn">📜 History</a>
+        <a href="/admin" class="action-btn admin">⚙️ Admin</a>
+
+    </div>
+
+    <!-- LIVE PREVIEW BOX -->
+    <div class="preview-box">
+        <h3>🧠 AI Preview</h3>
+        <p>Upload or use camera to detect waste in real-time</p>
+    </div>
+
+    <!-- SCRAP CALCULATOR -->
+    <!-- SCRAP + INSIGHTS (MERGED CLEAN UI) -->
+<div class="glass-card">
+
+    <h3>💰 Smart Scrap Calculator</h3>
+
+    <input type="number" id="weightInput" placeholder="Enter weight (kg)" step="0.1">
+
+    <button onclick="updateScrap()">⚡ Calculate</button>
+
+    <!-- DYNAMIC OUTPUT -->
+    <div id="scrapBreakdown" class="scrap-box">
+        <p>Enter weight to see updated values</p>
+    </div>
+
+</div>
+</div>
+    
+</div>
+
+</div>
+<script>
+function updateScrap() {
+    let weight = document.getElementById("weightInput").value;
+
+    if (!weight || weight <= 0) {
+        alert("Enter valid weight");
+        return;
+    }
+
+    fetch('/calculate_scrap', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({weight: weight})
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        let container = document.getElementById("scrapBreakdown");
+        container.innerHTML = "";
+
+        // 🔥 CATEGORY VALUES
+        for (let cat in data.breakdown) {
+            container.innerHTML += `
+                <div class="row">
+                    <span>${cat}</span>
+                    <span>₹ ${data.breakdown[cat]}</span>
+                </div>
+            `;
+        }
+
+        // 🔥 TOTAL
+        container.innerHTML += `
+            <hr>
+            <div class="total">
+                Total → ₹ ${data.total}
+            </div>
+        `;
+    })
+    .catch(err => {
+        console.log(err);
+        alert("Error fetching scrap data");
+    });
+}
+</script>
+{% endblock %}
