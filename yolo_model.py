@@ -1,6 +1,6 @@
 from ultralytics import YOLO
 
-model = YOLO("runs/detect/train-9/weights/best.pt")
+model = YOLO("best.pt")
 
 def detect_waste(image_path):
     results = model(image_path, conf=0.3)
