@@ -5,7 +5,7 @@ from werkzeug.utils import secure_filename
 from collections import defaultdict, Counter
 from yolo_model import detect_waste
 from ultralytics import YOLO
-model = YOLO("runs/detect/train-9/weights/best.pt")
+model = YOLO("best.pt")
 
 
 app = Flask(__name__)
