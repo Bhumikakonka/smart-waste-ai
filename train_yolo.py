@@ -27,4 +27,4 @@ print("🎉 Training completed!")
 
 # ---------------- SHOW RESULT PATH ----------------
 print("\n📦 Your model is saved at:")
-print("runs/detect/waste_model/weights/best.pt")
+print("best.pt")
